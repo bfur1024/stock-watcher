@@ -132,6 +132,21 @@ def save_state(state):
 
 def main():
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+
+    # Set the TEST_PUSH variable in GitHub to fire a test notification.
+    # Exits without touching state, so it can't confuse the real watcher.
+    if os.environ.get("TEST_PUSH"):
+        print(f"[{now}] TEST MODE - sending a test notification")
+        if not NTFY_TOPIC:
+            print("  NTFY_TOPIC secret is not set. Add it in "
+                  "Settings > Secrets and variables > Actions.")
+            return 1
+        push("Test notification",
+             "If you can read this, your stock alerts are working.",
+             URL, priority="high", tags="white_check_mark")
+        print("  Done. Delete the TEST_PUSH variable to resume normal checks.")
+        return 0
+
     state = load_state()
     was_in_stock = bool(state.get("in_stock"))
     fail_streak = int(state.get("fail_streak", 0))
