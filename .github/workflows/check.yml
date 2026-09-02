@@ -1,0 +1,56 @@
+name: Stock check
+
+on:
+  schedule:
+    # Every 5 minutes. GitHub often delays scheduled runs when it's busy,
+    # so expect this to land more like every 10-20 minutes in practice.
+    - cron: "*/5 * * * *"
+  # Lets you trigger a run by hand from the Actions tab.
+  workflow_dispatch:
+
+# The job commits state.json back to the repo, so it needs write access.
+permissions:
+  contents: write
+
+# Never let two runs overlap - they'd fight over the same commit.
+concurrency:
+  group: stock-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check stock
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          PRODUCT_URL: ${{ vars.PRODUCT_URL }}
+        run: python check_stock.py
+
+      - name: Save state back to the repo
+        run: |
+          git config user.name "stock-bot"
+          git config user.email "stock-bot@users.noreply.github.com"
+          git add state.json
+          if git diff --staged --quiet; then
+            echo "Nothing changed."
+            exit 0
+          fi
+          git commit -m "state: $(date -u '+%Y-%m-%d %H:%M UTC')"
+          # Another run may have pushed while we were working.
+          for i in 1 2 3; do
+            git pull --rebase --autostash && git push && exit 0
+            echo "Push failed, retrying ($i)..."
+            sleep 5
+          done
+          echo "Could not push state. Not failing the run."
