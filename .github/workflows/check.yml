@@ -35,6 +35,7 @@ jobs:
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           PRODUCT_URL: ${{ vars.PRODUCT_URL }}
+          TEST_PUSH: ${{ vars.TEST_PUSH }}
         run: python check_stock.py
 
       - name: Save state back to the repo
