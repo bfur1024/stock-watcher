@@ -1,7 +1,7 @@
 {
-  "in_stock": false,
-  "detail": "html: og:availability=oos",
-  "last_checked": "2026-09-24 15:04:50 UTC",
+  "in_stock": true,
+  "detail": "json: available: 33,3 x 96 mm",
+  "last_checked": "2026-09-24 15:25:56 UTC",
   "fail_streak": 0,
   "last_error": null
 }
